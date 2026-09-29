@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body class="login-page">
+<div class="login-card">
+  <div class="brand center"><div class="brand-icon">◉</div><div><b>Face Attendance</b><small>Management System</small></div></div>
+  <h1>Welcome Back</h1>
+  <p class="muted">Sign in to manage attendance</p>
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  <form method="post">
+    <label>Username</label><input name="username" placeholder="admin" required>
+    <label>Password</label><input type="password" name="password" placeholder="admin" required>
+    <button class="btn primary full">Login</button>
+  </form>
+  <p class="hint">Default: <b>admin / admin</b></p>
+</div>
+</body>
+</html>

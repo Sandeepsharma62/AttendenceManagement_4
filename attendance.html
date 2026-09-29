@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Take Attendance{% endblock %}
+{% block content %}
+<section class="page">
+<div class="page-head"><div><h1>Take Attendance</h1><p>Start camera and let the system recognize students</p></div></div>
+<div class="attendance-grid">
+ <div class="card camera-large"><video id="video" autoplay playsinline></video><canvas id="canvas" class="hidden"></canvas><div id="overlay" class="overlay"></div></div>
+ <div class="card log"><h3>Recognition Log</h3><div id="log"></div></div>
+</div>
+<button id="start" class="btn primary">▶ Start Attendance</button>
+<button id="stop" class="btn danger hidden">■ Stop Attendance</button>
+<div id="message" class="alert hidden"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+let stream=null,timer=null,running=false; const video=document.getElementById('video'),canvas=document.getElementById('canvas'),log=document.getElementById('log'),msg=document.getElementById('message');
+function alertMsg(t,c="success"){msg.textContent=t;msg.className="alert "+c;}
+async function start(){
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480},audio:false});video.srcObject=stream;running=true;document.getElementById('start').classList.add('hidden');document.getElementById('stop').classList.remove('hidden');alertMsg("Attendance recognition started.");recognize();}
+ catch(e){alertMsg("Camera unavailable or permission denied.","error");}
+}
+async function recognize(){
+ if(!running)return;
+ canvas.width=640;canvas.height=480;canvas.getContext('2d').drawImage(video,0,0,640,480);
+ try{
+  const r=await fetch('/api/attendance/recognize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:canvas.toDataURL('image/jpeg',0.78)})});
+  const d=await r.json();
+  if(d.recognized){
+    addLog(d.name,d.roll_no,d.marked,d.time);
+    if(d.marked)alertMsg("Attendance marked successfully!");
+  }
+ }catch(e){}
+ timer=setTimeout(recognize,1000);
+}
+function addLog(name,roll,marked,time){
+ const key=name+"-"+time; if([...log.children].some(x=>x.dataset.key===name))return;
+ const div=document.createElement('div');div.className='log-item';div.dataset.key=name;div.innerHTML='<div class="avatar">●</div><div><b>'+name+'</b><small>'+roll+'</small></div><span class="present">'+(marked?'✓ Present':'Already Present')+'<small>'+time+'</small></span>';log.prepend(div);
+}
+function stop(){running=false;if(timer)clearTimeout(timer);if(stream)stream.getTracks().forEach(t=>t.stop());document.getElementById('start').classList.remove('hidden');document.getElementById('stop').classList.add('hidden');}
+document.getElementById('start').onclick=start;document.getElementById('stop').onclick=stop;
+</script>
+{% endblock %}

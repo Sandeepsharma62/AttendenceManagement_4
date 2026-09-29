@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll(".alert").forEach(x=>{if(x.classList.contains("hidden"))x.style.display="none";});});

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+{% block content %}
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h1>Students</h1>
+      <p>Manage registered students</p>
+    </div><a class="btn primary" href="{{ url_for('enroll') }}">＋ Add Student</a>
+  </div>
+  <div class="card table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Roll No</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Created</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}<tr>
+            <td>{{s.roll_no}}</td>
+            <td><b>{{s.name}}</b></td>
+            <td>{{s.department}}</td>
+            <td>{{s.created_at[:10]}}</td>
+            <td><button class="btn small danger" onclick="removeStudent({{s.id}})">Delete</button></td>
+          </tr>{% else %}<tr>
+            <td colspan="5" class="empty">No students enrolled.</td>
+          </tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  async function removeStudent(id) { if (!confirm("Delete this student and their attendance?")) return; await fetch('/api/students/' + id, { method: 'DELETE' }); location.reload(); }
+</script>{% endblock %}

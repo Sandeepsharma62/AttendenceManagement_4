@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Welcome back, Admin!</p>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat blue"><span>Total Students</span><strong>{{ total }}</strong></div>
+    <div class="stat green"><span>Present Today</span><strong>{{ present }}</strong></div>
+    <div class="stat orange"><span>Absent Today</span><strong>{{ absent }}</strong></div>
+    <div class="stat purple"><span>Total Attendance</span><strong>{{ percentage }}%</strong></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Quick Actions</h3>
+      <div class="quick">
+        <a href="{{ url_for('enroll') }}" class="quick bluebg">♙<b>Enroll Student</b></a>
+        <a href="{{ url_for('attendance') }}" class="quick greenbg">▣<b>Take Attendance</b></a>
+        <a href="{{ url_for('records') }}" class="quick purplebg">▤<b>View Records</b></a>
+        <a href="{{ url_for('students') }}" class="quick graybg">♟<b>View Students</b></a>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Today's Attendance</h3>
+      <div class="donut" style="--p:{{ percentage }}%">
+        <div><b>{{ percentage }}%</b><small>Attendance</small></div>
+      </div>
+      <div class="legend"><span><i class="dot green"></i> Present <b>{{ present }}</b></span><span><i
+            class="dot red"></i> Absent <b>{{ absent }}</b></span></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

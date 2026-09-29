@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Enroll Student{% endblock %}
+{% block content %}
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h1>Enroll Student</h1>
+      <p>Capture multiple images of the student's face</p>
+    </div>
+  </div>
+  <div class="enroll-grid">
+    <div class="card form-card">
+      <label>Student Name</label><input id="name" placeholder="Sandeep Kumar">
+      <label>Student Roll No</label><input id="roll" placeholder="22CS001">
+      <label>Department</label><select id="department">
+        <option>Computer Science</option>
+        <option>Information Technology</option>
+        <option>Electronics</option>
+        <option>Mechanical</option>
+      </select>
+      <button id="startBtn" class="btn primary full">Start Capturing</button>
+      <button id="cancelBtn" class="btn danger full hidden">Cancel</button>
+    </div>
+    <div class="card camera-card">
+      <h3>Webcam Preview</h3>
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" class="hidden"></canvas>
+      <div id="captureStatus" class="camera-status">Camera is ready</div>
+    </div>
+    <div class="card captures">
+      <h3>Captured Images <span id="count">0/8</span></h3>
+      <div id="thumbs" class="thumbs"></div>
+    </div>
+  </div>
+  <div class="progress"><span id="progress"></span></div>
+  <div id="message" class="alert hidden"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  let stream, studentId = null, capturing = false, timer = null;
+  const video = document.getElementById('video'), canvas = document.getElementById('canvas');
+  const thumbs = document.getElementById('thumbs'), count = document.getElementById('count'), progress = document.getElementById('progress');
+  const msg = document.getElementById('message');
+
+  async function camera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+      video.srcObject = stream;
+    } catch (e) { showMsg("Camera permission denied or camera unavailable.", "error"); }
+  }
+  function showMsg(t, c = "success") { msg.textContent = t; msg.className = "alert " + c; }
+  async function start() {
+    const body = { name: document.getElementById('name').value.trim(), roll_no: document.getElementById('roll').value.trim(), department: document.getElementById('department').value };
+    if (!body.name || !body.roll_no) { showMsg("Enter student name and roll number.", "error"); return; }
+    const r = await fetch('/api/enroll/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json(); if (!r.ok) { showMsg(d.error, "error"); return; }
+    studentId = d.student_id; capturing = true; document.getElementById('startBtn').classList.add('hidden'); document.getElementById('cancelBtn').classList.remove('hidden');
+    showMsg("Capturing... Keep your face inside the box."); loop();
+  }
+  function loop() {
+    if (!capturing) return;
+    canvas.width = 640; canvas.height = 480; canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
+    fetch('/api/enroll/capture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: studentId, image: canvas.toDataURL('image/jpeg', 0.82) }) })
+      .then(r => r.json()).then(d => {
+        if (d.captured !== undefined) {
+          count.textContent = d.captured + "/8"; progress.style.width = (d.captured / 8 * 100) + "%";
+          while (thumbs.children.length < d.captured) { const box = document.createElement('div'); box.className = "thumb"; box.textContent = "✓"; thumbs.appendChild(box); }
+        }
+        if (d.done) { capturing = false; showMsg("Enrollment completed and face model trained."); document.getElementById('cancelBtn').classList.add('hidden'); if (stream) stream.getTracks().forEach(t => t.stop()); return; }
+        timer = setTimeout(loop, 700);
+      }).catch(() => timer = setTimeout(loop, 1000));
+  }
+  async function cancel() {
+    capturing = false; if (timer) clearTimeout(timer); if (studentId) await fetch('/api/enroll/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: studentId }) });
+    if (stream) stream.getTracks().forEach(t => t.stop()); location.reload();
+  }
+  document.getElementById('startBtn').onclick = start; document.getElementById('cancelBtn').onclick = cancel; camera();
+</script>
+{% endblock %}
